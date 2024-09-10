@@ -1,0 +1,113 @@
+package com.mycompany.trivianormal;
+
+import java_cup.runtime.*;
+import java.util.ArrayList;
+
+parser code {:
+    // cvodigo del parser
+    public void syntax_error(Symbol s) {
+        System.out.println("Error sintáctico en la línea " + (s.left + 1) + " columna " + s.right + ". Token inesperado: " + s.value);
+    }
+
+    public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception {
+        System.out.println("Error sintáctico irrecuperable en la línea " + (s.left + 1) + " columna " + s.right + ". Token inesperado: " + s.value);
+    }
+:}
+
+// Terminales
+terminal XSON_VERSION, REALIZAR_SOLICITUD, FIN_SOLICITUD;
+terminal LLAVE_ABRE, LLAVE_CIERRA, CORCHETE_ABRE, CORCHETE_CIERRA, COMA, DOS_PUNTOS;
+terminal SELECCIONAR, REPORTE, FILTRAR, POR, AND, OR, NOT;
+terminal USUARIO_NUEVO, MODIFICAR_USUARIO, ELIMINAR_USUARIO, LOGIN_USUARIO;
+terminal NUEVA_TRIVIA, ELIMINAR_TRIVIA, MODIFICAR_TRIVIA;
+terminal AGREGAR_COMPONENTE, ELIMINAR_COMPONENTE, MODIFICAR_COMPONENTE;
+terminal ID_TRIVIA, USUARIO, PASSWORD, NOMBRE, TIEMPO_PREGUNTA, TEMA, FECHA_CREACION, FECHA_MODIFICACION;
+terminal CAMPO_TEXTO, AREA_TEXTO, CHECKBOX, RADIO, FICHERO, COMBO;
+terminal String IDENTIFIER, STRING;
+terminal Double NUMBER;
+terminal String OPERADOR;
+
+// No terminales
+non terminal programa;
+non terminal solicitud_xson, bloque_parametros, parametro, valor;
+non terminal consulta_sqlkv, filtro, condicion;
+non terminal lista_id_trivias, lista_parametros;
+non terminal solicitud_usuario, solicitud_trivia, solicitud_componente;
+non terminal clase_componente, opciones_componente;
+
+// Precedencias
+precedence left OR;
+precedence left AND;
+precedence left NOT;
+
+// Gramática
+start with programa;
+
+programa ::= solicitud_xson
+           | consulta_sqlkv
+           ;
+
+solicitud_xson ::= XSON_VERSION REALIZAR_SOLICITUD STRING:tipo LLAVE_ABRE bloque_parametros LLAVE_CIERRA FIN_SOLICITUD
+                 ;
+
+bloque_parametros ::= IDENTIFIER:nombre DOS_PUNTOS CORCHETE_ABRE lista_parametros CORCHETE_CIERRA
+                    ;
+
+lista_parametros ::= parametro
+                   | lista_parametros COMA parametro
+                   ;
+
+parametro ::= LLAVE_ABRE lista_parametros LLAVE_CIERRA
+            | IDENTIFIER:nombre DOS_PUNTOS valor
+            ;
+
+valor ::= STRING
+        | NUMBER
+        | IDENTIFIER
+        ;
+
+solicitud_usuario ::= USUARIO_NUEVO solicitud_xson
+                    | MODIFICAR_USUARIO solicitud_xson
+                    | ELIMINAR_USUARIO solicitud_xson
+                    | LOGIN_USUARIO solicitud_xson
+                    ;
+
+solicitud_trivia ::= NUEVA_TRIVIA solicitud_xson
+                   | ELIMINAR_TRIVIA solicitud_xson
+                   | MODIFICAR_TRIVIA solicitud_xson
+                   ;
+
+solicitud_componente ::= AGREGAR_COMPONENTE solicitud_xson
+                       | ELIMINAR_COMPONENTE solicitud_xson
+                       | MODIFICAR_COMPONENTE solicitud_xson
+                       ;
+
+clase_componente ::= CAMPO_TEXTO
+                   | AREA_TEXTO
+                   | CHECKBOX
+                   | RADIO
+                   | FICHERO
+                   | COMBO
+                   ;
+
+opciones_componente ::= STRING
+                      | opciones_componente COMA STRING
+                      ;
+
+consulta_sqlkv ::= SELECCIONAR REPORTE lista_id_trivias filtro
+                 ;
+
+lista_id_trivias ::= IDENTIFIER:id
+                   | lista_id_trivias COMA IDENTIFIER:id
+                   ;
+
+filtro ::= /* empty */
+         | FILTRAR POR condicion
+         ;
+
+condicion ::= IDENTIFIER:campo OPERADOR:op valor
+            | condicion AND condicion
+            | condicion OR condicion
+            | NOT condicion
+            | LLAVE_ABRE condicion LLAVE_CIERRA
+            ; 
